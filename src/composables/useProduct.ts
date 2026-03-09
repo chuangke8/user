@@ -109,6 +109,9 @@ export function useProductLabels() {
     return centsToAmount(original - promotion)
   }
 
+  const hasPromotionRules = (product: any) => product?.promotion_rules?.length > 0
+  const getPromotionRules = (product: any): any[] => product?.promotion_rules ?? []
+
   return {
     getPurchaseTypeLabel,
     getFulfillmentTypeLabel,
@@ -121,5 +124,7 @@ export function useProductLabels() {
     hasSkuPromotionPrice,
     getSkuPromotionPriceAmount,
     getSkuPromotionSaveAmount,
+    hasPromotionRules,
+    getPromotionRules,
   }
 }

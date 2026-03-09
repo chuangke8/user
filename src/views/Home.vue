@@ -196,6 +196,11 @@
                       {{ t('products.promotionTag') }}
                     </span>
                   </div>
+                  <div v-else-if="hasPromotionRules(product)" class="mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <span class="theme-badge theme-badge-warning theme-badge-xs">
+                      {{ t('products.promotionBadge') }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -258,7 +263,7 @@ import { useLocalized, useProductLabels } from '../composables/useProduct'
 const router = useRouter()
 const { t } = useI18n()
 const { getLocalizedText, siteCurrency } = useLocalized()
-const { getFulfillmentTypeLabel, getStockBadgeClass, getStockStatusLabel, isSoldOut, hasPromotionPrice, getPromotionPriceAmount } = useProductLabels()
+const { getFulfillmentTypeLabel, getStockBadgeClass, getStockStatusLabel, isSoldOut, hasPromotionPrice, getPromotionPriceAmount, hasPromotionRules } = useProductLabels()
 
 const products = ref<any[]>([])
 const posts = ref<any[]>([])

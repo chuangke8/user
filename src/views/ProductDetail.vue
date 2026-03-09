@@ -188,6 +188,22 @@
                   </div>
                 </div>
 
+                <!-- 活动规则展示 -->
+                <div v-if="hasPromotionRules(product)" class="mb-8 rounded-xl border border-orange-200 dark:border-orange-800/50 bg-orange-50/50 dark:bg-orange-950/20 px-4 py-3">
+                  <h2 class="mb-2 text-sm font-bold text-orange-700 dark:text-orange-300 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    {{ t('products.promotionRulesTitle') }}
+                  </h2>
+                  <ul class="space-y-1">
+                    <li v-for="rule in getPromotionRules(product)" :key="rule.id" class="text-sm text-orange-600 dark:text-orange-300/90 flex items-center gap-1.5">
+                      <span class="w-1 h-1 rounded-full bg-orange-400 dark:bg-orange-500 shrink-0"></span>
+                      <span>{{ formatPromotionRule(rule) }}</span>
+                    </li>
+                  </ul>
+                </div>
+
                 <div v-if="activeSkus.length" class="mb-8">
                   <h2 class="mb-3 text-sm font-bold uppercase tracking-widest theme-text-muted">
                     {{ t('productDetail.skuTitle') }}
@@ -375,7 +391,23 @@ const cartStore = useCartStore()
 const userAuthStore = useUserAuthStore()
 
 const { getLocalizedText, siteCurrency, formatPrice } = useLocalized()
-const { getPurchaseTypeLabel, getFulfillmentTypeLabel, getStockBadgeClass, getStockStatusLabel, hasPromotionPrice, getPromotionPriceAmount, getPromotionSaveAmount, hasSkuPromotionPrice, getSkuPromotionPriceAmount, getSkuPromotionSaveAmount } = useProductLabels()
+const { getPurchaseTypeLabel, getFulfillmentTypeLabel, getStockBadgeClass, getStockStatusLabel, hasPromotionPrice, getPromotionPriceAmount, getPromotionSaveAmount, hasSkuPromotionPrice, getSkuPromotionPriceAmount, getSkuPromotionSaveAmount, hasPromotionRules, getPromotionRules } = useProductLabels()
+
+const formatPromotionRule = (rule: any) => {
+  const amount = formatPrice(rule.min_amount, siteCurrency.value)
+  const value = rule.type === 'percent' ? String(rule.value) : formatPrice(rule.value, siteCurrency.value)
+  const hasMin = Number(rule.min_amount) > 0
+  switch (rule.type) {
+    case 'percent':
+      return hasMin ? t('products.promotionHintPercent', { amount, value }) : t('products.promotionHintPercentNoMin', { value })
+    case 'fixed':
+      return hasMin ? t('products.promotionHintFixed', { amount, value }) : t('products.promotionHintFixedNoMin', { value })
+    case 'special_price':
+      return hasMin ? t('products.promotionHintSpecial', { amount, value }) : t('products.promotionHintSpecialNoMin', { value })
+    default:
+      return rule.name || ''
+  }
+}
 
 const loading = ref(true)
 const product = ref<any>(null)

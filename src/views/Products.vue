@@ -280,10 +280,15 @@
                       <span v-else class="theme-price-sm theme-text-primary">
                         {{ formatPrice(product.price_amount, siteCurrency) }}
                       </span>
-                      <div v-if="hasPromotionPrice(product)" class="hidden md:flex mt-0.5 flex-wrap items-center gap-1.5">
-                        <span class="text-xs theme-text-muted opacity-80 line-through">{{ formatPrice(product.price_amount, siteCurrency) }}</span>
+                      <div v-if="hasPromotionPrice(product)" class="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        <span class="hidden md:inline text-xs theme-text-muted opacity-80 line-through">{{ formatPrice(product.price_amount, siteCurrency) }}</span>
                         <span class="theme-badge theme-badge-danger theme-badge-xs">
                           {{ t('products.promotionTag') }}
+                        </span>
+                      </div>
+                      <div v-else-if="hasPromotionRules(product)" class="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        <span class="theme-badge theme-badge-warning theme-badge-xs">
+                          {{ t('products.promotionBadge') }}
                         </span>
                       </div>
                     </div>
@@ -368,7 +373,7 @@ const route = useRoute()
 const { t } = useI18n()
 
 const { getLocalizedText, siteCurrency, formatPrice } = useLocalized()
-const { getPurchaseTypeLabel, getFulfillmentTypeLabel, getStockBadgeClass, getStockStatusLabel, isSoldOut, hasPromotionPrice, getPromotionPriceAmount } = useProductLabels()
+const { getPurchaseTypeLabel, getFulfillmentTypeLabel, getStockBadgeClass, getStockStatusLabel, isSoldOut, hasPromotionPrice, getPromotionPriceAmount, hasPromotionRules } = useProductLabels()
 
 const loading = ref(true)
 const products = ref<any[]>([])
