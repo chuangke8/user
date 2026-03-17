@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { userOrderAPI, userProfileAPI } from '../api'
+import { memberLevelAPI, userOrderAPI, userProfileAPI } from '../api'
 import type {
     ChangeEmailPayload,
     ChangeUserPasswordPayload,
+    PublicMemberLevel,
     SendChangeEmailCodePayload,
     TelegramAuthPayload,
     TelegramBindingData,
@@ -36,6 +37,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
     const recentOrders = ref<PersonalOrderSummary[]>([])
     const recentLoginLogs = ref<UserLoginLogItem[]>([])
     const telegramBinding = ref<TelegramBindingData | null>(null)
+    const memberLevels = ref<PublicMemberLevel[]>([])
 
     const loadingProfile = ref(false)
     const savingProfile = ref(false)
@@ -57,6 +59,48 @@ export const useUserProfileStore = defineStore('user-profile', () => {
         }
         return profile.value?.email || '-'
     })
+
+    const currentLevel = computed(() => {
+        const levelId = profile.value?.member_level_id
+        if (!levelId || memberLevels.value.length === 0) return null
+        return memberLevels.value.find((l) => l.id === levelId) || null
+    })
+
+    const nextLevel = computed(() => {
+        const sorted = [...memberLevels.value].sort((a, b) => a.sort_order - b.sort_order)
+        if (!currentLevel.value) {
+            return sorted.length > 0 ? sorted[0] : null
+        }
+        const idx = sorted.findIndex((l) => l.id === currentLevel.value!.id)
+        if (idx < 0 || idx >= sorted.length - 1) return null
+        return sorted[idx + 1]
+    })
+
+    const upgradeProgress = computed(() => {
+        const next = nextLevel.value
+        if (!next) return null
+        const recharged = Number(profile.value?.total_recharged || 0)
+        const spent = Number(profile.value?.total_spent || 0)
+        const rechargeThreshold = next.recharge_threshold
+        const spendThreshold = next.spend_threshold
+        return {
+            rechargePercent: rechargeThreshold > 0 ? Math.min(100, (recharged / rechargeThreshold) * 100) : null,
+            spendPercent: spendThreshold > 0 ? Math.min(100, (spent / spendThreshold) * 100) : null,
+            recharged,
+            spent,
+            rechargeThreshold,
+            spendThreshold,
+        }
+    })
+
+    const loadMemberLevels = async () => {
+        try {
+            const response = await memberLevelAPI.list()
+            memberLevels.value = Array.isArray(response.data.data) ? response.data.data : []
+        } catch {
+            memberLevels.value = []
+        }
+    }
 
     const clearProfileError = () => {
         profileError.value = ''
@@ -228,6 +272,10 @@ export const useUserProfileStore = defineStore('user-profile', () => {
         recentOrders,
         recentLoginLogs,
         telegramBinding,
+        memberLevels,
+        currentLevel,
+        nextLevel,
+        upgradeProgress,
         loadingProfile,
         savingProfile,
         loadingOrders,
@@ -249,6 +297,7 @@ export const useUserProfileStore = defineStore('user-profile', () => {
         changeEmail,
         changePassword,
         loadRecentOrders,
+        loadMemberLevels,
         loadRecentLoginLogs,
         loadTelegramBinding,
         bindTelegram,

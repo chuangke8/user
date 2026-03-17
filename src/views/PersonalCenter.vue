@@ -13,8 +13,11 @@
 
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto">
             <div class="rounded-2xl border theme-surface-soft px-4 py-3">
-              <p class="text-[11px] uppercase tracking-[0.16em] text-gray-400">{{ t('personalCenter.tabs.overview') }}</p>
-              <p class="mt-2 text-sm font-semibold theme-text-secondary">{{ currentSectionLabel }}</p>
+              <p class="text-[11px] uppercase tracking-[0.16em] text-gray-400">{{ t('personalCenter.memberLevel.currentLevel') }}</p>
+              <p class="mt-2 flex items-center gap-1.5 text-sm font-semibold theme-text-secondary">
+                <span v-if="userProfileStore.currentLevel?.icon">{{ userProfileStore.currentLevel.icon }}</span>
+                <span>{{ levelName(userProfileStore.currentLevel) }}</span>
+              </p>
             </div>
             <div class="rounded-2xl border theme-surface-soft px-4 py-3">
               <p class="text-[11px] uppercase tracking-[0.16em] text-gray-400">{{ t('personalCenter.tabs.orders') }}</p>
@@ -91,6 +94,7 @@
           </div>
 
           <template v-if="currentSection === 'overview'">
+            <!-- User info card -->
             <div class="rounded-2xl border theme-panel-soft p-6 shadow-sm">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-4">
@@ -106,6 +110,94 @@
                 <span class="theme-badge px-3 py-1 text-xs font-semibold" :class="emailVerifiedClass">
                   {{ emailVerifiedLabel }}
                 </span>
+              </div>
+            </div>
+
+            <!-- Member level card -->
+            <div v-if="userProfileStore.memberLevels.length > 0" class="rounded-2xl border theme-panel-soft p-6 shadow-sm">
+              <!-- Current level header -->
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-3.5">
+                  <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl theme-selected-surface text-xl">
+                    {{ userProfileStore.currentLevel?.icon || '👤' }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.14em] theme-text-muted">{{ t('personalCenter.memberLevel.currentLevel') }}</p>
+                    <p class="mt-0.5 truncate text-lg font-bold theme-text-primary">{{ levelName(userProfileStore.currentLevel) }}</p>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 theme-badge theme-badge-accent rounded-full px-3 py-1 text-xs font-semibold">
+                    {{ t('personalCenter.memberLevel.discountRate') }}
+                    {{ userProfileStore.currentLevel && userProfileStore.currentLevel.discount_rate < 100
+                      ? t('personalCenter.memberLevel.discountOff', { n: userProfileStore.currentLevel.discount_rate })
+                      : t('personalCenter.memberLevel.noDiscount')
+                    }}
+                  </span>
+                  <span
+                    v-if="!userProfileStore.nextLevel && userProfileStore.currentLevel"
+                    class="theme-badge theme-badge-success rounded-full px-3 py-1 text-xs font-semibold"
+                  >
+                    {{ t('personalCenter.memberLevel.highestLevel') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Next level upgrade progress -->
+              <div v-if="userProfileStore.nextLevel" class="mt-5 rounded-xl theme-surface-soft p-4">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <!-- Next level info -->
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg theme-surface-muted text-base opacity-60">
+                      {{ userProfileStore.nextLevel.icon || '⭐' }}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.14em] theme-text-muted">{{ t('personalCenter.memberLevel.nextLevel') }}</p>
+                      <div class="mt-0.5 flex items-center gap-2">
+                        <span class="truncate text-sm font-bold theme-text-secondary">{{ levelName(userProfileStore.nextLevel) }}</span>
+                        <span v-if="userProfileStore.nextLevel.discount_rate < 100" class="shrink-0 text-xs font-medium theme-text-accent">
+                          {{ t('personalCenter.memberLevel.discountOff', { n: userProfileStore.nextLevel.discount_rate }) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Progress bars -->
+                <div v-if="userProfileStore.upgradeProgress" class="mt-3.5 space-y-3">
+                  <div v-if="userProfileStore.upgradeProgress.rechargePercent !== null">
+                    <div class="mb-1.5 flex items-center justify-between">
+                      <span class="text-xs font-medium theme-text-secondary">{{ t('personalCenter.memberLevel.rechargeProgress') }}</span>
+                      <span class="text-xs tabular-nums theme-text-muted">
+                        {{ userProfileStore.upgradeProgress.recharged.toFixed(2) }}
+                        <span class="mx-0.5 opacity-40">/</span>
+                        {{ userProfileStore.upgradeProgress.rechargeThreshold.toFixed(2) }}
+                      </span>
+                    </div>
+                    <div class="relative h-1.5 w-full overflow-hidden rounded-full theme-surface-muted">
+                      <div
+                        class="absolute inset-y-0 left-0 rounded-full bg-[var(--ui-accent)] transition-all duration-700 ease-out"
+                        :style="{ width: userProfileStore.upgradeProgress.rechargePercent + '%' }"
+                      ></div>
+                    </div>
+                  </div>
+                  <div v-if="userProfileStore.upgradeProgress.spendPercent !== null">
+                    <div class="mb-1.5 flex items-center justify-between">
+                      <span class="text-xs font-medium theme-text-secondary">{{ t('personalCenter.memberLevel.spendProgress') }}</span>
+                      <span class="text-xs tabular-nums theme-text-muted">
+                        {{ userProfileStore.upgradeProgress.spent.toFixed(2) }}
+                        <span class="mx-0.5 opacity-40">/</span>
+                        {{ userProfileStore.upgradeProgress.spendThreshold.toFixed(2) }}
+                      </span>
+                    </div>
+                    <div class="relative h-1.5 w-full overflow-hidden rounded-full theme-surface-muted">
+                      <div
+                        class="absolute inset-y-0 left-0 rounded-full bg-[var(--ui-accent)] transition-all duration-700 ease-out"
+                        :style="{ width: userProfileStore.upgradeProgress.spendPercent + '%' }"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -207,7 +299,7 @@ const props = withDefaults(defineProps<{ section?: PersonalSection }>(), {
 })
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const userProfileStore = useUserProfileStore()
 
 const sectionItems: Array<{ key: PersonalSection; label: string; icon: Component }> = [
@@ -234,11 +326,6 @@ const sectionRouteMap: Record<PersonalSection, string> = {
 
 const currentSection = computed<PersonalSection>(() => props.section)
 const globalAlert = ref<PageAlert | null>(null)
-
-const currentSectionLabel = computed(() => {
-  const current = sectionItems.find((item) => item.key === currentSection.value)
-  return current ? t(current.label) : t('personalCenter.title')
-})
 
 const displayInitial = computed(() => {
   const name = userProfileStore.displayName || ''
@@ -281,11 +368,18 @@ const emailVerifiedClass = computed(() => {
   return 'theme-badge-warning'
 })
 
+const levelName = (level: import('../api').PublicMemberLevel | null | undefined) => {
+  if (!level) return t('personalCenter.memberLevel.defaultLevel')
+  const loc = locale.value as string
+  return level.name[loc] || level.name['zh-CN'] || level.name['en'] || level.slug || t('personalCenter.memberLevel.defaultLevel')
+}
+
 const initialize = async () => {
   globalAlert.value = null
   const [profileOk] = await Promise.all([
     userProfileStore.loadProfile(),
     userProfileStore.loadRecentOrders(5),
+    userProfileStore.loadMemberLevels(),
   ])
   if (!profileOk) {
     globalAlert.value = {
